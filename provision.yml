@@ -1,0 +1,52 @@
+---
+- hosts: pi
+  gather_facts: yes
+  become: true
+
+  vars_prompt:
+
+    - name: "pi_password"
+      prompt: "new password"
+      encrypt: "sha512_crypt"
+      private: no
+
+    - name: "pi_hostname"
+      prompt: "new hostname"
+      private: no
+
+  tasks:
+
+    - name: install package(s)
+      apt:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - vim
+          - git
+    
+    - name: place ssh key
+      authorized_key:
+        user: pi
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+    - name: update hostname
+      template:
+        src: "templates/{{ item.template }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - { template: hostname.j2, dest: /etc/hostname }
+        - { template: hosts.j2, dest: /etc/hosts }
+
+    - name: update password 
+      become: yes
+      user:
+        name: "pi"
+        password: "{{ pi_password }}"
+        
+    - name: reboot
+      shell: "sleep 5 && reboot"
+      async: 1
+      poll: 0

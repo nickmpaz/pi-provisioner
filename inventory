@@ -1,0 +1,6 @@
+[pi]
+192.168.50.141
+
+[pi:vars]
+ansible_ssh_user=pi
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
