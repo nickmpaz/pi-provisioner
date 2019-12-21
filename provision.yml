@@ -5,14 +5,15 @@
 
   vars_prompt:
 
-    - name: "pi_password"
-      prompt: "new password"
-      encrypt: "sha512_crypt"
-      private: no
-
     - name: "pi_hostname"
       prompt: "new hostname"
       private: no
+
+    - name: "pi_password"
+      prompt: "new password"
+      encrypt: "sha512_crypt"
+      private: yes
+      confirm: yes
 
   tasks:
 
@@ -24,6 +25,9 @@
         packages:
           - vim
           - git
+          - libffi-dev
+          - libssl-dev
+          - python3-pip
     
     - name: place ssh key
       authorized_key:
@@ -45,7 +49,18 @@
       user:
         name: "pi"
         password: "{{ pi_password }}"
+
+    - name: docker
+      shell: "{{ item }}"
+      with_items:
+        - "curl -sSL get.docker.com | sh"
+        - "usermod pi -aG docker"
         
+    - name: docker compose
+      pip:
+        name: docker-compose
+        executable: pip3
+
     - name: reboot
       shell: "sleep 5 && reboot"
       async: 1
